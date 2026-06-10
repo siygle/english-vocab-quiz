@@ -7,6 +7,7 @@ Demo: https://siygle.github.io/english-vocab-quiz/
 ## Features
 
 - CSV / JSON 題庫匯入
+- 線上查詢英文單字並自動帶入中文意思
 - 測驗標題、答題時間、抽題數、缺字比例自訂
 - 兩種出題方式：
   - 缺字單字卡：填完整英文與中文
@@ -14,6 +15,7 @@ Demo: https://siygle.github.io/english-vocab-quiz/
 - 優先使用線上字典 MP3 發音，失敗時退回瀏覽器 TTS
 - 中文意思採寬鬆比對，題庫可用 `;` 補充同義詞
 - 錯題重測
+- 親近國小學童的遊戲化介面
 
 ## Tech Stack
 
