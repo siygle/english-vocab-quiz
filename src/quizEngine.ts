@@ -38,9 +38,12 @@ export function parseBank(text: string): VocabItem[] {
 }
 
 export function buildQuestions(bank: VocabItem[], modes: QuizMode[], count: number): Question[] {
-  const expanded = bank.flatMap((item) => modes.map((mode) => ({ ...item, mode })));
-  const shuffled = shuffle(expanded);
-  return count > 0 ? shuffled.slice(0, count) : shuffled;
+  const selectedItems = count > 0 ? shuffle(bank).slice(0, count) : shuffle(bank);
+  return selectedItems.map((item) => ({ ...item, mode: pickRandomMode(modes) }));
+}
+
+function pickRandomMode(modes: QuizMode[]): QuizMode {
+  return modes[Math.floor(Math.random() * modes.length)] ?? 'card';
 }
 
 export function shuffle<T>(items: T[]): T[] {

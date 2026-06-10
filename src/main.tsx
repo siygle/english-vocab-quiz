@@ -47,7 +47,7 @@ function App() {
       return [];
     }
   }, [bankText]);
-  const availableQuestionCount = bank.length * Math.max(modes.length, 1);
+  const availableQuestionCount = bank.length;
   const wrongQuestions = useMemo(() => answers.filter((answer) => !answer.ok).map(({ word, zh, mode }) => ({ word, zh, mode })), [answers]);
 
   useEffect(() => {
@@ -171,7 +171,7 @@ function App() {
             <label>
               抽題數
               <input type="number" min={0} max={availableQuestionCount || undefined} value={questionCount} onChange={(event) => setQuestionCount(Number(event.target.value))} />
-              <span className="field-hint">0 = 全部；目前可抽 {availableQuestionCount} 題</span>
+              <span className="field-hint">0 = 全部；目前題庫有 {availableQuestionCount} 個單字，每題會隨機選一種出題方式</span>
             </label>
             <label>
               缺字比例
@@ -252,11 +252,11 @@ function App() {
           <div className="grid two">
             <label>
               英文答案
-              <input autoComplete="off" autoCapitalize="none" spellCheck={false} value={answerEn} onChange={(event) => setAnswerEn(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') submitAnswer(); }} />
+              <input autoComplete="off" autoCapitalize="none" spellCheck={false} value={answerEn} onChange={(event) => setAnswerEn(event.target.value)} onKeyDown={(event) => { if (shouldSubmitOnEnter(event)) submitAnswer(); }} />
             </label>
             <label>
               中文意思（接近即可）
-              <input autoComplete="off" value={answerZh} onChange={(event) => setAnswerZh(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') submitAnswer(); }} />
+              <input autoComplete="off" value={answerZh} onChange={(event) => setAnswerZh(event.target.value)} onKeyDown={(event) => { if (shouldSubmitOnEnter(event)) submitAnswer(); }} />
             </label>
           </div>
           <div className="actions">
@@ -288,6 +288,14 @@ function App() {
       )}
     </main>
   );
+}
+
+function shouldSubmitOnEnter(event: React.KeyboardEvent<HTMLInputElement>): boolean {
+  if (event.key !== 'Enter') return false;
+  if (event.nativeEvent.isComposing) return false;
+  if ('keyCode' in event.nativeEvent && event.nativeEvent.keyCode === 229) return false;
+  event.preventDefault();
+  return true;
 }
 
 createRoot(document.getElementById('root')!).render(<App />);
