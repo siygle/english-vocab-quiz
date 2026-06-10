@@ -2,19 +2,37 @@ import { normalizeEnglish } from './quizEngine';
 
 const audioCache = new Map<string, string>();
 
-export async function speakWord(word: string, repeat: number, rate: number): Promise<void> {
-  const played = await playDictionaryAudio(word, repeat).catch(() => false);
-  if (played) return;
-  await speakWithBrowserTts(word, repeat, rate);
+let playbackToken = 0;
+let activeAudio: HTMLAudioElement | null = null;
+
+export function stopSpeech(): void {
+  playbackToken += 1;
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio.src = '';
+    activeAudio.load();
+    activeAudio = null;
+  }
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
 }
 
-async function playDictionaryAudio(word: string, repeat: number): Promise<boolean> {
+export async function speakWord(word: string, repeat: number, rate: number): Promise<void> {
+  stopSpeech();
+  const token = playbackToken;
+  const played = await playDictionaryAudio(word, repeat, token).catch(() => false);
+  if (played || token !== playbackToken) return;
+  await speakWithBrowserTts(word, repeat, rate, token);
+}
+
+async function playDictionaryAudio(word: string, repeat: number, token: number): Promise<boolean> {
   const key = normalizeEnglish(word);
-  if (!key) return false;
+  if (!key || token !== playbackToken) return false;
 
   if (!audioCache.has(key)) {
     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`);
     if (!response.ok) throw new Error('Dictionary audio not found');
+    if (token !== playbackToken) return false;
+
     const data = (await response.json()) as Array<{ phonetics?: Array<{ audio?: string }> }>;
     const urls = data
       .flatMap((entry) => entry.phonetics ?? [])
@@ -25,26 +43,48 @@ async function playDictionaryAudio(word: string, repeat: number): Promise<boolea
   }
 
   const url = audioCache.get(key);
-  if (!url) return false;
+  if (!url || token !== playbackToken) return false;
 
   for (let i = 0; i < repeat; i += 1) {
-    await playAudioOnce(url);
-    if (i < repeat - 1) await wait(450);
+    if (token !== playbackToken) return false;
+    await playAudioOnce(url, token);
+    if (i < repeat - 1) await wait(450, token);
   }
 
-  return true;
+  return token === playbackToken;
 }
 
-function playAudioOnce(url: string): Promise<void> {
+function playAudioOnce(url: string, token: number): Promise<void> {
   return new Promise((resolve, reject) => {
+    if (token !== playbackToken) {
+      resolve();
+      return;
+    }
+
     const audio = new Audio(url);
-    audio.onended = () => resolve();
-    audio.onerror = () => reject(new Error('Audio playback failed'));
-    void audio.play().catch(reject);
+    activeAudio = audio;
+
+    const cleanup = () => {
+      if (activeAudio === audio) activeAudio = null;
+    };
+
+    audio.onended = () => {
+      cleanup();
+      resolve();
+    };
+    audio.onerror = () => {
+      cleanup();
+      reject(new Error('Audio playback failed'));
+    };
+
+    void audio.play().catch((error: unknown) => {
+      cleanup();
+      reject(error instanceof Error ? error : new Error(String(error)));
+    });
   });
 }
 
-async function speakWithBrowserTts(text: string, repeat: number, rate: number): Promise<void> {
+async function speakWithBrowserTts(text: string, repeat: number, rate: number, token: number): Promise<void> {
   if (!('speechSynthesis' in window)) {
     alert('此瀏覽器不支援語音播放。');
     return;
@@ -52,13 +92,19 @@ async function speakWithBrowserTts(text: string, repeat: number, rate: number): 
 
   speechSynthesis.cancel();
   for (let i = 0; i < repeat; i += 1) {
-    await speakOnce(text, rate);
-    if (i < repeat - 1) await wait(350);
+    if (token !== playbackToken) return;
+    await speakOnce(text, rate, token);
+    if (i < repeat - 1) await wait(350, token);
   }
 }
 
-function speakOnce(text: string, rate: number): Promise<void> {
+function speakOnce(text: string, rate: number, token: number): Promise<void> {
   return new Promise((resolve) => {
+    if (token !== playbackToken) {
+      resolve();
+      return;
+    }
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
     utterance.rate = rate;
@@ -82,6 +128,8 @@ function pickEnglishVoice(): SpeechSynthesisVoice | null {
   );
 }
 
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function wait(ms: number, token: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, token === playbackToken ? ms : 0);
+  });
 }

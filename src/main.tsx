@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { speakWord } from './audio';
+import { speakWord, stopSpeech } from './audio';
 import { buildQuestions, gradeAnswer, maskWord, parseBank, type Answer, type Question, type QuizMode } from './quizEngine';
 import './styles.css';
 
@@ -50,8 +50,14 @@ function App() {
   }, [endAt, now, screen]);
 
   useEffect(() => {
-    if (screen === 'quiz' && current?.mode === 'audio') void speakWord(current.word, speechRepeat, speechRate);
-  }, [current, screen, speechRate, speechRepeat]);
+    if (screen !== 'quiz' || current?.mode !== 'audio') {
+      stopSpeech();
+      return;
+    }
+
+    void speakWord(current.word, speechRepeat, speechRate);
+    return () => stopSpeech();
+  }, [current?.mode, current?.word, index, screen]);
 
   function toggleMode(mode: QuizMode) {
     setModes((value) => (value.includes(mode) ? value.filter((item) => item !== mode) : [...value, mode]));
