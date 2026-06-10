@@ -2,6 +2,8 @@
 
 英文單字隨機測驗網頁，支援匯入題庫、缺字單字卡、聽讀音作答、限時測驗與錯題重測。
 
+Demo: https://siygle.github.io/english-vocab-quiz/
+
 ## Features
 
 - CSV / JSON 題庫匯入
