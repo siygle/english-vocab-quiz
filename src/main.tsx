@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { speakWord, stopSpeech } from './audio';
 import { lookupWords } from './dictionary';
@@ -36,6 +36,7 @@ function App() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [answerEn, setAnswerEn] = useState('');
   const [answerZh, setAnswerZh] = useState('');
+  const isComposingRef = useRef(false);
   const [endAt, setEndAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
 
@@ -252,11 +253,11 @@ function App() {
           <div className="grid two">
             <label>
               英文答案
-              <input autoComplete="off" autoCapitalize="none" spellCheck={false} value={answerEn} onChange={(event) => setAnswerEn(event.target.value)} onKeyDown={(event) => { if (shouldSubmitOnEnter(event)) submitAnswer(); }} />
+              <input autoComplete="off" autoCapitalize="none" spellCheck={false} value={answerEn} onChange={(event) => setAnswerEn(event.target.value)} onCompositionStart={() => { isComposingRef.current = true; }} onCompositionEnd={() => { window.setTimeout(() => { isComposingRef.current = false; }, 0); }} onKeyDown={(event) => { if (shouldSubmitOnEnter(event, isComposingRef.current)) submitAnswer(); }} />
             </label>
             <label>
               中文意思（接近即可）
-              <input autoComplete="off" value={answerZh} onChange={(event) => setAnswerZh(event.target.value)} onKeyDown={(event) => { if (shouldSubmitOnEnter(event)) submitAnswer(); }} />
+              <input autoComplete="off" value={answerZh} onChange={(event) => setAnswerZh(event.target.value)} onCompositionStart={() => { isComposingRef.current = true; }} onCompositionEnd={() => { window.setTimeout(() => { isComposingRef.current = false; }, 0); }} onKeyDown={(event) => { if (shouldSubmitOnEnter(event, isComposingRef.current)) submitAnswer(); }} />
             </label>
           </div>
           <div className="actions">
@@ -290,10 +291,16 @@ function App() {
   );
 }
 
-function shouldSubmitOnEnter(event: React.KeyboardEvent<HTMLInputElement>): boolean {
+function shouldSubmitOnEnter(event: React.KeyboardEvent<HTMLInputElement>, isComposing: boolean): boolean {
   if (event.key !== 'Enter') return false;
-  if (event.nativeEvent.isComposing) return false;
-  if ('keyCode' in event.nativeEvent && event.nativeEvent.keyCode === 229) return false;
+  if (isComposing || event.nativeEvent.isComposing) {
+    event.preventDefault();
+    return false;
+  }
+  if ('keyCode' in event.nativeEvent && event.nativeEvent.keyCode === 229) {
+    event.preventDefault();
+    return false;
+  }
   event.preventDefault();
   return true;
 }
