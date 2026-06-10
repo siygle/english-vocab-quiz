@@ -255,11 +255,11 @@ function App() {
           <div className="grid two">
             <label>
               英文答案
-              <input autoComplete="off" autoCapitalize="none" spellCheck={false} value={answerEn} onChange={(event) => setAnswerEn(event.target.value)} onCompositionStart={() => { isComposingRef.current = true; }} onCompositionEnd={() => { window.setTimeout(() => { isComposingRef.current = false; }, 0); }} onKeyDown={(event) => { if (shouldSubmitOnEnter(event, isComposingRef.current)) submitAnswer(); }} />
+              <input key={`answer-en-${index}`} name={`answer-en-${index}`} autoComplete="new-password" autoCorrect="off" autoCapitalize="none" spellCheck={false} value={answerEn} onChange={(event) => setAnswerEn(event.target.value)} onCompositionStart={() => { isComposingRef.current = true; }} onCompositionEnd={() => { window.setTimeout(() => { isComposingRef.current = false; }, 0); }} onKeyDown={(event) => { if (shouldSubmitOnEnter(event, isComposingRef.current)) submitAnswer(); }} />
             </label>
             <label>
               中文意思（接近即可）
-              <input autoComplete="off" value={answerZh} onChange={(event) => setAnswerZh(event.target.value)} onCompositionStart={() => { isComposingRef.current = true; }} onCompositionEnd={() => { window.setTimeout(() => { isComposingRef.current = false; }, 0); }} onKeyDown={(event) => { if (shouldSubmitOnEnter(event, isComposingRef.current)) submitAnswer(); }} />
+              <input key={`answer-zh-${index}`} name={`answer-zh-${index}`} autoComplete="new-password" autoCorrect="off" autoCapitalize="none" spellCheck={false} value={answerZh} onChange={(event) => setAnswerZh(event.target.value)} onCompositionStart={() => { isComposingRef.current = true; }} onCompositionEnd={() => { window.setTimeout(() => { isComposingRef.current = false; }, 0); }} onKeyDown={(event) => { if (shouldSubmitOnEnter(event, isComposingRef.current)) submitAnswer(); }} />
             </label>
           </div>
           <div className="actions">
