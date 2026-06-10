@@ -32,6 +32,7 @@ function App() {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [message, setMessage] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [maskedPrompts, setMaskedPrompts] = useState<string[]>([]);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [answerEn, setAnswerEn] = useState('');
@@ -105,6 +106,7 @@ function App() {
 
       const nextQuestions = pool ?? buildQuestions(bank, modes, questionCount);
       setQuestions(nextQuestions);
+      setMaskedPrompts(nextQuestions.map((question) => (question.mode === 'card' ? maskWord(question.word, maskRatio) : '🔊')));
       setIndex(0);
       setAnswers([]);
       setAnswerEn('');
@@ -246,7 +248,7 @@ function App() {
 
           <div className="question">
             <div className="badge">{current.mode === 'audio' ? '聽讀音作答' : '缺字單字卡'}</div>
-            <div className="prompt">{current.mode === 'audio' ? '🔊' : maskWord(current.word, maskRatio)}</div>
+            <div className="prompt">{maskedPrompts[index] ?? (current.mode === 'audio' ? '🔊' : current.word)}</div>
             {current.mode === 'audio' && <button type="button" onClick={() => void speakWord(current.word, speechRepeat, speechRate)}>🔊 再聽一次</button>}
           </div>
 
